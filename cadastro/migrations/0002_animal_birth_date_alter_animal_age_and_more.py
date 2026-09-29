@@ -11,11 +11,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name='animal',
-            name='birth_date',
-            field=models.DateField(blank=True, null=True, verbose_name='data de nascimento'),
-        ),
         migrations.AlterField(
             model_name='animal',
             name='age',

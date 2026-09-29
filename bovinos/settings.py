@@ -3,10 +3,20 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-placeholder')
-DEBUG = os.environ.get('DEBUG', 'true' if not os.environ.get('VERCEL') else 'false').lower() == 'true'
-ALLOWED_HOSTS = ['*']
-CSRF_TRUSTED_ORIGINS = ['https://*.vercel.app']
+DEBUG = os.environ.get('DEBUG', 'false').lower() == 'true'
+
+SECRET_KEY = os.environ.get('SECRET_KEY')
+if not SECRET_KEY:
+    if not DEBUG:
+        raise RuntimeError('SECRET_KEY environment variable is required when DEBUG is off')
+    SECRET_KEY = 'django-insecure-dev-only'
+
+ALLOWED_HOSTS = ['.vercel.app', 'localhost', '127.0.0.1'] + [
+    h for h in os.environ.get('ALLOWED_HOSTS', '').split(',') if h
+]
+CSRF_TRUSTED_ORIGINS = [
+    f'https://{h}' for h in filter(None, [os.environ.get('VERCEL_URL'), os.environ.get('VERCEL_PROJECT_PRODUCTION_URL')])
+] + [o for o in os.environ.get('CSRF_TRUSTED_ORIGINS', '').split(',') if o]
 
 INSTALLED_APPS = [
     'django.contrib.admin',
