@@ -8,3 +8,6 @@ db.sqlite3
 .vercel
 .env*
 .env*
+.agents/
+.claude/
+skills-lock.json
