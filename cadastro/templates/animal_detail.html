@@ -25,7 +25,7 @@
 <div class="card mb-3">
     <div class="card-body p-0">
         <div class="table-responsive">
-            <table class="table mb-0">
+            <table class="table table-stack mb-0">
             <thead class="table-light">
                 <tr>
                     <th>Data</th>
@@ -37,10 +37,10 @@
             <tbody>
                 {% for w in weights %}
                 <tr>
-                    <td>{{ w.weigh_date }}</td>
-                    <td>{{ w.weight }}</td>
-                    <td>{{ w.age_years }}a {{ w.age_months }}m</td>
-                    <td>
+                    <td data-label="Data">{{ w.weigh_date }}</td>
+                    <td data-label="Peso (kg)">{{ w.weight }}</td>
+                    <td data-label="Idade">{{ w.age_years }}a {{ w.age_months }}m</td>
+                    <td class="actions" data-label="">
                         <a class="btn btn-sm btn-outline-secondary"
                            href="{% url 'weighing_edit' animal.pk w.pk %}">Editar</a>
                         <a class="btn btn-sm btn-outline-danger"
@@ -64,7 +64,7 @@
 <div class="card">
     <div class="card-body p-0">
         <div class="table-responsive">
-            <table class="table mb-0">
+            <table class="table table-stack mb-0">
             <thead class="table-light">
                 <tr>
                     <th>Nome</th>
@@ -76,10 +76,10 @@
             <tbody>
                 {% for vaccine in vaccines %}
                 <tr>
-                    <td>{{ vaccine.name }}</td>
-                    <td>{{ vaccine.application_date }}</td>
-                    <td>{% if vaccine.second_dose %}{{ vaccine.second_dose_date }}{% else %}-{% endif %}</td>
-                    <td>
+                    <td data-label="Nome">{{ vaccine.name }}</td>
+                    <td data-label="Aplicação">{{ vaccine.application_date }}</td>
+                    <td data-label="2ª dose">{% if vaccine.second_dose %}{{ vaccine.second_dose_date }}{% else %}-{% endif %}</td>
+                    <td class="actions" data-label="">
                         <a class="btn btn-sm btn-outline-secondary"
                            href="{% url 'vaccine_edit' animal.pk vaccine.pk %}">Editar</a>
                         <a class="btn btn-sm btn-outline-danger"

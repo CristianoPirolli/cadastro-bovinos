@@ -9,6 +9,17 @@
     @media (max-width: 576px) {
         h1.h3, h1.h4, h2.h5 { font-size: 1.25rem; }
         .table td, .table th { font-size: 0.9rem; }
+        main.container { padding-left: 0.75rem; padding-right: 0.75rem; }
+    }
+    .table-stack td.actions { white-space: nowrap; }
+    @media (max-width: 575.98px) {
+        .table-stack thead { display: none; }
+        .table-stack, .table-stack tbody, .table-stack tr, .table-stack td { display: block; width: 100%; }
+        .table-stack tr { padding: .5rem .75rem; border-bottom: 1px solid var(--bs-border-color); }
+        .table-stack td { display: flex; justify-content: space-between; gap: 1rem; border: 0; padding: .25rem 0; text-align: right; }
+        .table-stack td::before { content: attr(data-label); font-weight: 600; text-align: left; }
+        .table-stack td.actions { justify-content: flex-end; flex-wrap: wrap; padding-top: .5rem; }
+        .table-stack td.actions::before { content: none; }
     }
     </style>
 </head>

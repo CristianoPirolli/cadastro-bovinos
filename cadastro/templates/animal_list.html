@@ -9,7 +9,7 @@
 <div class="card shadow-sm">
     <div class="card-body p-0">
         <div class="table-responsive">
-            <table class="table table-hover mb-0">
+            <table class="table table-stack table-hover mb-0">
             <thead class="table-light">
                 <tr>
                     <th>Nº do brinco</th>
@@ -21,10 +21,10 @@
             <tbody>
                 {% for animal in animals %}
                 <tr>
-                    <td><a href="{% url 'animal_detail' animal.pk %}">{{ animal.ear_tag_number }}</a></td>
-                    <td>{{ animal.get_sex_display }}</td>
-                    <td>{{ animal.age_display }}</td>
-                    <td>
+                    <td data-label="Nº do brinco"><a href="{% url 'animal_detail' animal.pk %}">{{ animal.ear_tag_number }}</a></td>
+                    <td data-label="Sexo">{{ animal.get_sex_display }}</td>
+                    <td data-label="Idade">{{ animal.age_display }}</td>
+                    <td class="actions" data-label="">
                         <a class="btn btn-sm btn-outline-primary" href="{% url 'animal_detail' animal.pk %}">Ver</a>
                         <a class="btn btn-sm btn-outline-secondary" href="{% url 'animal_edit' animal.pk %}">Editar</a>
                         <a class="btn btn-sm btn-outline-danger" href="{% url 'animal_delete' animal.pk %}">Excluir</a>
