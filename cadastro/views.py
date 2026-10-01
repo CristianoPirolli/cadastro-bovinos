@@ -1,10 +1,14 @@
 from datetime import date
+from functools import wraps
 
+from django.contrib import messages
+from django.contrib.auth import get_user_model, update_session_auth_hash
+from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from .models import Animal, Vaccine, Weighing
-from .forms import AnimalForm, VaccineForm, WeighingForm
+from .forms import AnimalForm, UserCreateForm, UserPasswordForm, VaccineForm, WeighingForm
 
 
 def animal_list(request):
@@ -152,3 +156,63 @@ def animal_delete(request, pk):
         animal.delete()
         return redirect('animal_list')
     return render(request, 'animal_confirm_delete.html', {'animal': animal})
+
+
+# --- Gerenciamento de usuários (somente superusuário) ---
+
+def superuser_required(view):
+    @wraps(view)
+    def wrapper(request, *args, **kwargs):
+        if not request.user.is_superuser:
+            raise PermissionDenied
+        return view(request, *args, **kwargs)
+    return wrapper
+
+
+@superuser_required
+def user_list(request):
+    users = get_user_model().objects.order_by('username')
+    return render(request, 'user_list.html', {'users': users})
+
+
+@superuser_required
+def user_create(request):
+    form = UserCreateForm(request.POST or None)
+    if request.method == 'POST' and form.is_valid():
+        user = form.save()
+        messages.success(request, f'Usuário "{user.username}" criado.')
+        return redirect('user_list')
+    return render(request, 'user_form.html', {'form': form, 'title': 'Novo usuário'})
+
+
+@superuser_required
+def user_password(request, pk):
+    target = get_object_or_404(get_user_model(), pk=pk)
+    form = UserPasswordForm(target, request.POST or None)
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        if target.pk == request.user.pk:
+            update_session_auth_hash(request, target)
+        messages.success(request, f'Senha de "{target.username}" alterada.')
+        return redirect('user_list')
+    return render(request, 'user_form.html', {
+        'form': form, 'title': f'Trocar senha de {target.username}',
+    })
+
+
+@superuser_required
+def user_delete(request, pk):
+    target = get_object_or_404(get_user_model(), pk=pk)
+    blocked = None
+    if target.pk == request.user.pk:
+        blocked = 'Você não pode excluir o próprio usuário.'
+    elif target.is_superuser and get_user_model().objects.filter(is_superuser=True).count() <= 1:
+        blocked = 'Não é possível excluir o único administrador.'
+    if request.method == 'POST':
+        if blocked:
+            messages.error(request, blocked)
+        else:
+            target.delete()
+            messages.success(request, f'Usuário "{target.username}" excluído.')
+        return redirect('user_list')
+    return render(request, 'user_confirm_delete.html', {'target': target, 'blocked': blocked})

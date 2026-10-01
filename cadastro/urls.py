@@ -13,4 +13,8 @@ urlpatterns = [
     path('animal/<int:animal_pk>/weighing/add/', views.weighing_create, name='weighing_add'),
     path('animal/<int:animal_pk>/weighing/<int:pk>/editar/', views.weighing_edit, name='weighing_edit'),
     path('animal/<int:animal_pk>/weighing/<int:pk>/excluir/', views.weighing_delete, name='weighing_delete'),
+    path('usuarios/', views.user_list, name='user_list'),
+    path('usuarios/novo/', views.user_create, name='user_add'),
+    path('usuarios/<int:pk>/senha/', views.user_password, name='user_password'),
+    path('usuarios/<int:pk>/excluir/', views.user_delete, name='user_delete'),
 ]

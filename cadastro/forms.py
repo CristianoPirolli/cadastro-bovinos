@@ -1,6 +1,7 @@
 from datetime import date
 
 from django import forms
+from django.contrib.auth.forms import SetPasswordForm, UserCreationForm
 from .models import Animal, Vaccine, Weighing
 
 
@@ -121,3 +122,37 @@ class VaccineForm(forms.ModelForm):
         if not second_dose:
             cleaned_data['second_dose_date'] = None
         return cleaned_data
+
+
+def _bootstrapify(form):
+    for field in form.fields.values():
+        field.widget.attrs.setdefault('class', 'form-control')
+
+
+class UserCreateForm(UserCreationForm):
+    is_superuser = forms.BooleanField(
+        required=False, label='Administrador (pode gerenciar usuários)',
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+    )
+
+    class Meta(UserCreationForm.Meta):
+        fields = ('username',)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for name, field in self.fields.items():
+            if name != 'is_superuser':
+                field.widget.attrs.setdefault('class', 'form-control')
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.is_superuser = user.is_staff = self.cleaned_data['is_superuser']
+        if commit:
+            user.save()
+        return user
+
+
+class UserPasswordForm(SetPasswordForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        _bootstrapify(self)
