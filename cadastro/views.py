@@ -284,7 +284,7 @@ def vaccine_batch(request):
     form = VaccineBatchForm(request.POST or None)
     if request.method == 'POST' and form.is_valid():
         created = form.save()
-        messages.success(request, f'{len(created)} vacina(s) programada(s).')
+        messages.success(request, f'Vacina cadastrada para {len(created)} animal(is).')
         return redirect('vaccine_calendar')
     return render(request, 'vaccine_batch.html', {'form': form})
 

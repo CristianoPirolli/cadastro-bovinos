@@ -151,7 +151,7 @@ class VaccineBatchForm(forms.Form):
         widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
     )
     applied = forms.BooleanField(
-        required=False, label='1ª dose já aplicada?',
+        required=False, initial=True, label='1ª dose já aplicada? (desmarque para apenas programar)',
         widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}),
     )
     second_dose_date = forms.DateField(
