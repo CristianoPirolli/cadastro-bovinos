@@ -139,7 +139,7 @@ class VaccineBatchForm(forms.Form):
     animals = forms.ModelMultipleChoiceField(
         queryset=Animal.objects.order_by('ear_tag_number'),
         label='Animais',
-        widget=forms.CheckboxSelectMultiple,
+        widget=forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input'}),
         error_messages={'required': 'Selecione ao menos um animal.'},
     )
     name = forms.ChoiceField(

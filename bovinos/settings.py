@@ -97,3 +97,5 @@ STORAGES = {
     'staticfiles': {'BACKEND': 'whitenoise.storage.CompressedStaticFilesStorage'},
 }
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+FORMAT_MODULE_PATH = ['bovinos.formats']
