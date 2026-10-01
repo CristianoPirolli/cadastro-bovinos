@@ -5,7 +5,29 @@
     <h1 class="h3 mb-0">Animais</h1>
     <a class="btn btn-success align-self-md-start" href="{% url 'animal_add' %}">Adicionar Animal</a>
 </div>
-{% if animals %}
+<div class="row g-2 mb-3 text-center">
+    <div class="col-6 col-md-3"><div class="card shadow-sm"><div class="card-body py-2"><div class="h4 mb-0">{{ total }}</div><small class="text-muted">Animais</small></div></div></div>
+    <div class="col-6 col-md-3"><div class="card shadow-sm"><div class="card-body py-2"><div class="h4 mb-0">{{ males }}</div><small class="text-muted">Machos</small></div></div></div>
+    <div class="col-6 col-md-3"><div class="card shadow-sm"><div class="card-body py-2"><div class="h4 mb-0">{{ females }}</div><small class="text-muted">Fêmeas</small></div></div></div>
+    <div class="col-6 col-md-3"><div class="card shadow-sm"><div class="card-body py-2"><div class="h4 mb-0">{{ pending_second_doses }}</div><small class="text-muted">2ªs doses futuras</small></div></div></div>
+</div>
+<form method="get" class="row g-2 mb-3">
+    <div class="col-12 col-sm-6 col-md-5">
+        <input class="form-control" type="search" name="q" value="{{ q }}" placeholder="Buscar por nº do brinco ou da mãe">
+    </div>
+    <div class="col-6 col-sm-3 col-md-3">
+        <select class="form-select" name="sex">
+            <option value="">Todos</option>
+            <option value="M" {% if sex == 'M' %}selected{% endif %}>Machos</option>
+            <option value="F" {% if sex == 'F' %}selected{% endif %}>Fêmeas</option>
+        </select>
+    </div>
+    <div class="col-6 col-sm-3 col-md-4 d-flex gap-2">
+        <button class="btn btn-primary" type="submit">Filtrar</button>
+        {% if q or sex %}<a class="btn btn-outline-secondary" href="{% url 'animal_list' %}">Limpar</a>{% endif %}
+    </div>
+</form>
+{% if page.object_list %}
 <div class="card shadow-sm">
     <div class="card-body p-0">
         <div class="table-responsive">
@@ -19,7 +41,7 @@
                 </tr>
             </thead>
             <tbody>
-                {% for animal in animals %}
+                {% for animal in page %}
                 <tr>
                     <td data-label="Nº do brinco"><a href="{% url 'animal_detail' animal.pk %}">{{ animal.ear_tag_number }}</a></td>
                     <td data-label="Sexo">{{ animal.get_sex_display }}</td>
@@ -36,7 +58,14 @@
         </div>
     </div>
 </div>
+{% if page.has_other_pages %}
+<nav class="mt-3 d-flex justify-content-between align-items-center">
+    {% if page.has_previous %}<a class="btn btn-outline-primary btn-sm" href="?{% if querystring %}{{ querystring }}&amp;{% endif %}page={{ page.previous_page_number }}">&laquo; Anterior</a>{% else %}<span></span>{% endif %}
+    <small class="text-muted">Página {{ page.number }} de {{ page.paginator.num_pages }}</small>
+    {% if page.has_next %}<a class="btn btn-outline-primary btn-sm" href="?{% if querystring %}{{ querystring }}&amp;{% endif %}page={{ page.next_page_number }}">Próxima &raquo;</a>{% else %}<span></span>{% endif %}
+</nav>
+{% endif %}
 {% else %}
-<p>Nenhum animal cadastrado.</p>
+<p>{% if q or sex %}Nenhum animal encontrado para o filtro.{% else %}Nenhum animal cadastrado.{% endif %}</p>
 {% endif %}
 {% endblock %}

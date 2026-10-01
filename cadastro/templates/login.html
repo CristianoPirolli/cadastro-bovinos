@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}Entrar{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12 col-sm-8 col-md-5 col-lg-4">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h1 class="h4 mb-3">Entrar</h1>
+                <form method="post">
+                    {% csrf_token %}
+                    {% if form.errors %}<div class="alert alert-danger py-2">Usuário ou senha inválidos.</div>{% endif %}
+                    <input type="hidden" name="next" value="{{ next }}">
+                    <div class="mb-3">
+                        <label class="form-label" for="id_username">Usuário</label>
+                        <input class="form-control" type="text" name="username" id="id_username" autofocus autocapitalize="none" autocomplete="username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="id_password">Senha</label>
+                        <input class="form-control" type="password" name="password" id="id_password" autocomplete="current-password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Entrar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

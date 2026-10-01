@@ -22,3 +22,16 @@ A idade é calculada automaticamente a partir da data de nascimento informada e 
 Ao cadastrar vacinas, o campo de nome oferece uma lista pré-definida com imunizações bovinas comuns.
 
 As páginas utilizam Bootstrap responsivo, ajustando-se automaticamente para uso confortável em dispositivos móveis.
+
+## Novidades
+
+- **Login obrigatório**: todas as páginas exigem autenticação. Crie usuários em `/admin/` ou com `python manage.py createsuperuser`.
+- **Busca e filtro** por nº do brinco (do animal ou da mãe) e por sexo, com paginação.
+- **Resumo** na lista: total de animais, machos, fêmeas e segundas doses futuras.
+- **Ganho médio diário (GMD)** e último peso na página do animal.
+- **Validações**: brinco único, nascimento não futuro, pesagem não anterior ao nascimento, peso maior que zero.
+- Testes: `python manage.py test`.
+
+## Desenvolvimento local
+
+Defina `DEBUG=true` (sem `DATABASE_URL` usa SQLite). Em produção são obrigatórios `SECRET_KEY` e `DATABASE_URL`.

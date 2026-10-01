@@ -44,6 +44,16 @@ class Animal(models.Model):
             parts.append('0 meses')
         return ' '.join(parts)
 
+    def weight_stats(self):
+        """Último peso e ganho médio diário (kg/dia) entre primeira e última pesagem."""
+        ws = list(self.weighings.order_by('weigh_date'))
+        if not ws:
+            return None
+        first, last = ws[0], ws[-1]
+        days = (last.weigh_date - first.weigh_date).days
+        gmd = round((last.weight - first.weight) / days, 3) if days > 0 else None
+        return {'last_weight': last.weight, 'last_date': last.weigh_date, 'gmd': gmd}
+
     def save(self, *args, **kwargs):
         if self.birth_date:
             years, _ = self.age_components()

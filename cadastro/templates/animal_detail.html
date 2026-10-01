@@ -14,7 +14,11 @@
         <p><strong>Idade:</strong> {{ animal.age_display }}</p>
         <p><strong>Nº do brinco:</strong> {{ animal.ear_tag_number }}</p>
         <p><strong>Nº do brinco da mãe:</strong> {{ animal.mother_ear_tag_number }}</p>
-        <p><strong>Data de nascimento:</strong> {{ animal.birth_date }}</p>
+        <p><strong>Data de nascimento:</strong> {{ animal.birth_date|default:"-" }}</p>
+        {% if stats %}
+        <p><strong>Último peso:</strong> {{ stats.last_weight }} kg ({{ stats.last_date }})</p>
+        <p class="mb-0"><strong>Ganho médio diário:</strong> {% if stats.gmd is not None %}{{ stats.gmd }} kg/dia{% else %}- (precisa de 2 pesagens em datas diferentes){% endif %}</p>
+        {% endif %}
     </div>
 </div>
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-2 gap-2">
