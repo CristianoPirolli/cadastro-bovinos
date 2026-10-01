@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+{% block title %}Calendário de vacinas{% endblock %}
+{% block content %}
+<style>
+    .cal { table-layout: fixed; }
+    .cal td { height: 6.5rem; vertical-align: top; padding: .25rem; font-size: .75rem; overflow: hidden; }
+    .cal td.out { background: var(--bs-tertiary-bg); color: var(--bs-secondary-color); }
+    .cal td.today { outline: 2px solid var(--bs-primary); outline-offset: -2px; }
+    .cal .ev { display: block; border-radius: .25rem; padding: 0 .25rem; margin-top: 2px; color: #fff; text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ev.done { background: var(--bs-success); }
+    .ev.overdue { background: var(--bs-danger); }
+    .ev.scheduled { background: var(--bs-primary); }
+</style>
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3 gap-2">
+    <h1 class="h3 mb-0">Calendário de vacinas</h1>
+    <div class="d-flex gap-2">
+        <a class="btn btn-success" href="{% url 'vaccine_batch' %}">Programar em lote</a>
+        <a class="btn btn-outline-secondary" href="{% url 'animal_list' %}">Animais</a>
+    </div>
+</div>
+
+{% if overdue %}
+<div class="card border-danger shadow-sm mb-3">
+    <div class="card-header bg-danger text-white">Doses atrasadas ({{ overdue|length }})</div>
+    <ul class="list-group list-group-flush">
+        {% for e in overdue %}
+        <li class="list-group-item d-flex flex-column flex-sm-row justify-content-between gap-2">
+            <span><strong>{{ e.date|date:"d/m/Y" }}</strong> · {{ e.vaccine.name }} ({{ e.dose }}ª dose) · <a href="{% url 'animal_detail' e.animal.pk %}">{{ e.animal.ear_tag_number }}</a></span>
+            <form method="post" action="{% url 'vaccine_mark_done' e.animal.pk e.vaccine.pk e.dose %}">
+                {% csrf_token %}<button class="btn btn-sm btn-outline-success" type="submit">Marcar aplicada</button>
+            </form>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+{% if upcoming %}
+<div class="card shadow-sm mb-3">
+    <div class="card-header">Próximas doses programadas</div>
+    <ul class="list-group list-group-flush">
+        {% for e in upcoming %}
+        <li class="list-group-item d-flex flex-column flex-sm-row justify-content-between gap-2">
+            <span><strong>{{ e.date|date:"d/m/Y" }}</strong> · {{ e.vaccine.name }} ({{ e.dose }}ª dose) · <a href="{% url 'animal_detail' e.animal.pk %}">{{ e.animal.ear_tag_number }}</a></span>
+            <form method="post" action="{% url 'vaccine_mark_done' e.animal.pk e.vaccine.pk e.dose %}">
+                {% csrf_token %}<button class="btn btn-sm btn-outline-success" type="submit">Marcar aplicada</button>
+            </form>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+<div class="d-flex justify-content-between align-items-center mb-2">
+    <a class="btn btn-outline-primary btn-sm" href="?year={{ prev.year }}&amp;month={{ prev.month }}">&laquo; {{ prev|date:"M" }}</a>
+    <h2 class="h5 mb-0">{{ title }}</h2>
+    <a class="btn btn-outline-primary btn-sm" href="?year={{ next.year }}&amp;month={{ next.month }}">{{ next|date:"M" }} &raquo;</a>
+</div>
+<div class="mb-2 small">
+    <span class="badge bg-success">aplicada</span>
+    <span class="badge bg-primary">programada</span>
+    <span class="badge bg-danger">atrasada</span>
+</div>
+
+<div class="card shadow-sm mb-3 d-none d-md-block">
+    <table class="table table-bordered cal mb-0">
+        <thead class="table-light"><tr>{% for w in weekdays %}<th class="text-center">{{ w }}</th>{% endfor %}</tr></thead>
+        <tbody>
+        {% for week in grid %}
+        <tr>
+            {% for cell in week %}
+            <td class="{% if not cell.in_month %}out{% endif %} {% if cell.is_today %}today{% endif %}">
+                <div class="fw-semibold">{{ cell.day.day }}</div>
+                {% for e in cell.events %}
+                <a class="ev {{ e.status }}" href="{% url 'animal_detail' e.animal.pk %}" title="{{ e.vaccine.name }} ({{ e.dose }}ª dose) – {{ e.animal.ear_tag_number }}">{{ e.vaccine.name }} · {{ e.animal.ear_tag_number }}</a>
+                {% endfor %}
+            </td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="card shadow-sm d-md-none">
+    <div class="card-header">Agenda de {{ title }}</div>
+    {% if agenda %}
+    <ul class="list-group list-group-flush">
+        {% for e in agenda %}
+        <li class="list-group-item">
+            <span class="badge bg-{% if e.status == 'done' %}success{% elif e.status == 'overdue' %}danger{% else %}primary{% endif %}">{{ e.date|date:"d/m" }}</span>
+            {{ e.vaccine.name }} ({{ e.dose }}ª dose) ·
+            <a href="{% url 'animal_detail' e.animal.pk %}">{{ e.animal.ear_tag_number }}</a>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <div class="card-body text-muted">Nenhuma dose neste mês.</div>
+    {% endif %}
+</div>
+{% endblock %}

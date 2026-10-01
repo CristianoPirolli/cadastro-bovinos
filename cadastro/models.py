@@ -67,6 +67,19 @@ class Vaccine(models.Model):
     application_date = models.DateField('data de aplicação')
     second_dose = models.BooleanField('segunda dose', default=False)
     second_dose_date = models.DateField('data da segunda dose', blank=True, null=True)
+    applied = models.BooleanField('aplicada', default=True)
+    second_dose_applied = models.BooleanField('2ª dose aplicada', default=False)
+
+    def dose_events(self):
+        """Doses (1ª e, se houver, 2ª) com data, se foi aplicada e status."""
+        today = date.today()
+        doses = [(1, self.application_date, self.applied)]
+        if self.second_dose and self.second_dose_date:
+            doses.append((2, self.second_dose_date, self.second_dose_applied))
+        for number, when, done in doses:
+            status = 'done' if done else ('overdue' if when < today else 'scheduled')
+            yield {'vaccine': self, 'animal': self.animal, 'dose': number, 'date': when,
+                   'done': done, 'status': status}
 
     def clean(self):
         if self.second_dose and not self.second_dose_date:

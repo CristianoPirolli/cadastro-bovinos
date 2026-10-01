@@ -74,6 +74,7 @@
                     <th>Nome</th>
                     <th>Aplicação</th>
                     <th>2ª dose</th>
+                    <th>Status</th>
                     <th>Ações</th>
                 </tr>
             </thead>
@@ -83,7 +84,14 @@
                     <td data-label="Nome">{{ vaccine.name }}</td>
                     <td data-label="Aplicação">{{ vaccine.application_date }}</td>
                     <td data-label="2ª dose">{% if vaccine.second_dose %}{{ vaccine.second_dose_date }}{% else %}-{% endif %}</td>
+                    <td data-label="Status">{% for e in vaccine.dose_events %}<span class="badge bg-{% if e.status == 'done' %}success{% elif e.status == 'overdue' %}danger{% else %}primary{% endif %}">{{ e.dose }}ª: {% if e.status == 'done' %}aplicada{% elif e.status == 'overdue' %}atrasada{% else %}programada{% endif %}</span> {% endfor %}</td>
                     <td class="actions" data-label="">
+                        {% for e in vaccine.dose_events %}{% if not e.done %}
+                        <form method="post" class="d-inline" action="{% url 'vaccine_mark_done' animal.pk vaccine.pk e.dose %}">
+                            {% csrf_token %}<input type="hidden" name="next" value="{{ request.path }}">
+                            <button class="btn btn-sm btn-outline-success" type="submit">Aplicar {{ e.dose }}ª</button>
+                        </form>
+                        {% endif %}{% endfor %}
                         <a class="btn btn-sm btn-outline-secondary"
                            href="{% url 'vaccine_edit' animal.pk vaccine.pk %}">Editar</a>
                         <a class="btn btn-sm btn-outline-danger"

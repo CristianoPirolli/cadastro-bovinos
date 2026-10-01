@@ -9,7 +9,7 @@
     <div class="col-6 col-md-3"><div class="card shadow-sm"><div class="card-body py-2"><div class="h4 mb-0">{{ total }}</div><small class="text-muted">Animais</small></div></div></div>
     <div class="col-6 col-md-3"><div class="card shadow-sm"><div class="card-body py-2"><div class="h4 mb-0">{{ males }}</div><small class="text-muted">Machos</small></div></div></div>
     <div class="col-6 col-md-3"><div class="card shadow-sm"><div class="card-body py-2"><div class="h4 mb-0">{{ females }}</div><small class="text-muted">Fêmeas</small></div></div></div>
-    <div class="col-6 col-md-3"><div class="card shadow-sm"><div class="card-body py-2"><div class="h4 mb-0">{{ pending_second_doses }}</div><small class="text-muted">2ªs doses futuras</small></div></div></div>
+    <div class="col-6 col-md-3"><a class="text-decoration-none" href="{% url 'vaccine_calendar' %}"><div class="card shadow-sm {% if overdue_count %}border-danger{% endif %}"><div class="card-body py-2"><div class="h4 mb-0 {% if overdue_count %}text-danger{% endif %}">{{ scheduled_count }}{% if overdue_count %} <small>+{{ overdue_count }} atrasadas</small>{% endif %}</div><small class="text-muted">Doses programadas</small></div></div></a></div>
 </div>
 <form method="get" class="row g-2 mb-3">
     <div class="col-12 col-sm-6 col-md-5">

@@ -1,14 +1,29 @@
-from datetime import date
+import calendar
+from datetime import date, timedelta
 from functools import wraps
 
 from django.contrib import messages
 from django.contrib.auth import get_user_model, update_session_auth_hash
 from django.core.exceptions import PermissionDenied
+from django.http import Http404
+from django.urls import reverse
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_POST
 from .models import Animal, Vaccine, Weighing
-from .forms import AnimalForm, UserCreateForm, UserPasswordForm, VaccineForm, WeighingForm
+from .forms import AnimalForm, UserCreateForm, UserPasswordForm, VaccineBatchForm, VaccineForm, WeighingForm
+
+
+def _pending_events():
+    """Doses ainda não aplicadas (agendadas ou atrasadas), da mais antiga para a mais nova."""
+    events = []
+    qs = Vaccine.objects.select_related('animal').filter(
+        Q(applied=False) | Q(second_dose=True, second_dose_applied=False)
+    )
+    for vaccine in qs:
+        events.extend(e for e in vaccine.dose_events() if not e['done'])
+    return sorted(events, key=lambda e: e['date'])
 
 
 def animal_list(request):
@@ -25,9 +40,9 @@ def animal_list(request):
     page = Paginator(animals, 20).get_page(request.GET.get('page'))
     params = request.GET.copy()
     params.pop('page', None)
-    pending_second_doses = Vaccine.objects.filter(
-        second_dose=True, second_dose_date__gte=date.today()
-    ).count()
+    pending = _pending_events()
+    scheduled_count = sum(1 for e in pending if e['status'] == 'scheduled')
+    overdue_count = sum(1 for e in pending if e['status'] == 'overdue')
     return render(request, 'animal_list.html', {
         'page': page,
         'q': q,
@@ -36,7 +51,8 @@ def animal_list(request):
         'total': all_animals.count(),
         'males': all_animals.filter(sex='M').count(),
         'females': all_animals.filter(sex='F').count(),
-        'pending_second_doses': pending_second_doses,
+        'scheduled_count': scheduled_count,
+        'overdue_count': overdue_count,
     })
 
 
@@ -216,3 +232,76 @@ def user_delete(request, pk):
             messages.success(request, f'Usuário "{target.username}" excluído.')
         return redirect('user_list')
     return render(request, 'user_confirm_delete.html', {'target': target, 'blocked': blocked})
+
+
+# --- Vacinas: calendário, lote e baixa de dose ---
+
+MONTHS_PT = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho',
+             'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
+
+
+def vaccine_calendar(request):
+    today = date.today()
+    try:
+        first = date(int(request.GET.get('year', today.year)), int(request.GET.get('month', today.month)), 1)
+    except (TypeError, ValueError, OverflowError):
+        first = today.replace(day=1)
+    weeks = calendar.Calendar(firstweekday=6).monthdatescalendar(first.year, first.month)
+    start, end = weeks[0][0], weeks[-1][-1]
+
+    vaccines = Vaccine.objects.select_related('animal').filter(
+        Q(application_date__range=(start, end)) | Q(second_dose_date__range=(start, end))
+    )
+    by_day = {}
+    for vaccine in vaccines:
+        for event in vaccine.dose_events():
+            if start <= event['date'] <= end:
+                by_day.setdefault(event['date'], []).append(event)
+
+    grid = [
+        [{'day': d, 'in_month': d.month == first.month, 'is_today': d == today,
+          'events': by_day.get(d, [])} for d in week]
+        for week in weeks
+    ]
+    agenda = sorted(
+        (e for evs in by_day.values() for e in evs if e['date'].month == first.month),
+        key=lambda e: e['date'],
+    )
+    pending = _pending_events()
+    return render(request, 'vaccine_calendar.html', {
+        'grid': grid,
+        'agenda': agenda,
+        'title': f'{MONTHS_PT[first.month - 1]} de {first.year}',
+        'prev': (first - timedelta(days=1)).replace(day=1),
+        'next': (first + timedelta(days=32)).replace(day=1),
+        'overdue': [e for e in pending if e['status'] == 'overdue'],
+        'upcoming': [e for e in pending if e['status'] == 'scheduled'][:15],
+        'weekdays': ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'],
+    })
+
+
+def vaccine_batch(request):
+    form = VaccineBatchForm(request.POST or None)
+    if request.method == 'POST' and form.is_valid():
+        created = form.save()
+        messages.success(request, f'{len(created)} vacina(s) programada(s).')
+        return redirect('vaccine_calendar')
+    return render(request, 'vaccine_batch.html', {'form': form})
+
+
+@require_POST
+def vaccine_mark_done(request, animal_pk, pk, dose):
+    vaccine = get_object_or_404(Vaccine, pk=pk, animal_id=animal_pk)
+    if dose == 1:
+        vaccine.applied = True
+    elif dose == 2 and vaccine.second_dose:
+        vaccine.second_dose_applied = True
+        vaccine.applied = True
+    else:
+        raise Http404
+    vaccine.save()
+    messages.success(request, f'{vaccine.name} ({dose}ª dose) marcada como aplicada.')
+    nxt = request.POST.get('next', '')
+    if not nxt.startswith('/') or nxt.startswith('//'):
+        nxt = reverse('vaccine_calendar')
+    return redirect(nxt)

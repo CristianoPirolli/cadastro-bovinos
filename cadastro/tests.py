@@ -3,7 +3,7 @@ from datetime import date, timedelta
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
-from .models import Animal, Weighing
+from .models import Animal, Vaccine, Weighing
 
 
 class BaseTest(TestCase):
@@ -112,3 +112,70 @@ class UserManagementTests(TestCase):
         self.client.login(username='master', password='senha-forte-123')
         self.client.post(f'/usuarios/{self.admin.pk}/excluir/')
         self.assertTrue(get_user_model().objects.filter(pk=self.admin.pk).exists())
+
+
+class VaccineScheduleTests(BaseTest):
+    def make(self, **kw):
+        defaults = dict(animal=self.animal, name='Aftosa', application_date=date.today(), applied=True)
+        defaults.update(kw)
+        return Vaccine.objects.create(**defaults)
+
+    def test_dose_status(self):
+        today = date.today()
+        v = self.make(
+            application_date=today - timedelta(days=10), applied=True,
+            second_dose=True, second_dose_date=today - timedelta(days=1), second_dose_applied=False,
+        )
+        self.assertEqual([e['status'] for e in v.dose_events()], ['done', 'overdue'])
+        v2 = self.make(application_date=today + timedelta(days=5), applied=False)
+        self.assertEqual([e['status'] for e in v2.dose_events()], ['scheduled'])
+
+    def test_calendar_page_and_navigation(self):
+        self.make(application_date=date(2030, 3, 10), applied=False)
+        r = self.client.get('/vacinas/calendario/', {'year': 2030, 'month': 3})
+        self.assertEqual(r.status_code, 200)
+        self.assertContains(r, 'Março de 2030')
+        self.assertContains(r, 'Aftosa')
+        self.assertEqual(self.client.get('/vacinas/calendario/', {'year': 'x', 'month': '99'}).status_code, 200)
+
+    def test_mark_done(self):
+        v = self.make(application_date=date.today() + timedelta(days=3), applied=False)
+        url = f'/animal/{self.animal.pk}/vaccine/{v.pk}/dose/1/aplicada/'
+        self.assertEqual(self.client.get(url).status_code, 405)
+        self.client.post(url)
+        v.refresh_from_db()
+        self.assertTrue(v.applied)
+        self.assertEqual(self.client.post(f'/animal/{self.animal.pk}/vaccine/{v.pk}/dose/2/aplicada/').status_code, 404)
+
+    def test_mark_done_rejects_external_redirect(self):
+        v = self.make(applied=False)
+        r = self.client.post(f'/animal/{self.animal.pk}/vaccine/{v.pk}/dose/1/aplicada/', {'next': 'https://evil.example'})
+        self.assertEqual(r['Location'], '/vacinas/calendario/')
+
+    def test_batch_schedule(self):
+        other = Animal.objects.create(sex='F', ear_tag_number='B2', mother_ear_tag_number='M2')
+        r = self.client.post('/vacinas/lote/', {
+            'animals': [self.animal.pk, other.pk], 'name': 'Raiva',
+            'application_date': (date.today() + timedelta(days=7)).isoformat(),
+            'second_dose_date': (date.today() + timedelta(days=37)).isoformat(),
+        })
+        self.assertRedirects(r, '/vacinas/calendario/')
+        self.assertEqual(Vaccine.objects.filter(name='Raiva', applied=False, second_dose=True).count(), 2)
+
+    def test_batch_requires_animals(self):
+        r = self.client.post('/vacinas/lote/', {'name': 'Raiva', 'application_date': date.today().isoformat()})
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(Vaccine.objects.count(), 0)
+
+    def test_second_dose_before_first_rejected(self):
+        today = date.today()
+        r = self.client.post(f'/animal/{self.animal.pk}/vaccine/add/', {
+            'name': 'Raiva', 'application_date': today.isoformat(), 'applied': 'on',
+            'second_dose': 'on', 'second_dose_date': (today - timedelta(days=1)).isoformat(),
+        })
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(Vaccine.objects.count(), 0)
+
+    def test_detail_shows_apply_button(self):
+        self.make(application_date=date.today() + timedelta(days=3), applied=False)
+        self.assertContains(self.client.get(f'/animal/{self.animal.pk}/'), 'Aplicar 1ª')
