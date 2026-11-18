@@ -35,3 +35,13 @@ As páginas utilizam Bootstrap responsivo, ajustando-se automaticamente para uso
 ## Desenvolvimento local
 
 Defina `DEBUG=true` (sem `DATABASE_URL` usa SQLite). Em produção são obrigatórios `SECRET_KEY` e `DATABASE_URL`.
+
+## Deploy na Vercel
+
+1. Em [vercel.com/new](https://vercel.com/new), importe este repositório do GitHub (Framework Preset: **Other**, sem build command).
+2. No projeto, vá em **Storage** → crie/conecte um banco **Postgres** (ex.: Neon). Isso define `DATABASE_URL`/`POSTGRES_URL` automaticamente.
+3. Em **Settings → Environment Variables**, adicione:
+   - `SECRET_KEY`: uma string longa e aleatória
+   - `DJANGO_SUPERUSER_USERNAME` e `DJANGO_SUPERUSER_PASSWORD`: login do primeiro administrador
+   - (opcional) `ALLOWED_HOSTS` e `CSRF_TRUSTED_ORIGINS` se usar domínio próprio (ex.: `meudominio.com` e `https://meudominio.com`)
+4. Faça **Redeploy**. No primeiro acesso as migrações são aplicadas e o superusuário é criado automaticamente (defina `SKIP_AUTO_MIGRATE=true` para desativar).
