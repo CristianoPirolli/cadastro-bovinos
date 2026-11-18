@@ -65,6 +65,11 @@ if DATABASE_URL:
     import dj_database_url
     DATABASES = {'default': dj_database_url.parse(DATABASE_URL, conn_max_age=0, ssl_require=True)}
 else:
+    if os.environ.get('VERCEL'):
+        raise RuntimeError(
+            'DATABASE_URL (ou POSTGRES_URL) é obrigatório na Vercel: '
+            'conecte um banco Postgres ao projeto em Storage.'
+        )
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',

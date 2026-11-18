@@ -1,0 +1,4 @@
+# App Kivy de exemplo, não faz parte do site
+main.py
+venv/
+db.sqlite3
